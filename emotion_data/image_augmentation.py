@@ -1,11 +1,11 @@
 import numpy as np
 from skimage import transform
 
-def rotate(img, deg):
+def rotate(shape, deg):
     '''
     '''
     # Shift the image so that the centre is around the origin
-    center = np.array([int(np.floor(i)/2) for i in img.shape[:2][::-1]])
+    center = np.array([int(np.floor(i)/2) for i in shape[:2][::-1]])
     trans = transform.SimilarityTransform(translation=-center)
 
     # Rotate 
@@ -15,11 +15,11 @@ def rotate(img, deg):
     trans += transform.SimilarityTransform(translation=center)
     return trans 
 
-def zoom(img, scale):
+def zoom(shape, scale):
     '''
     '''
     # Shift the image so that the centre is around the origin
-    center = np.array([int(np.floor(i)/2) for i in img.shape[:2][::-1]])
+    center = np.array([int(np.floor(i)/2) for i in shape[:2][::-1]])
     trans = transform.SimilarityTransform(translation=-center)
 
     # Scale 
@@ -29,12 +29,12 @@ def zoom(img, scale):
     trans += transform.SimilarityTransform(translation=center)
     return trans 
 
-def width_shift(img, shift):
+def width_shift(shape, shift):
     '''
     '''
-    return transform.SimilarityTransform(translation=[shift*img.shape[1],0])
+    return transform.SimilarityTransform(translation=[shift*shape[1],0])
 
-def height_shift(img, shift):
+def height_shift(shape, shift):
     '''
     '''
-    return transform.SimilarityTransform(translation=[0,shift*img.shape[0]])
+    return transform.SimilarityTransform(translation=[0,shift*shape[0]])
