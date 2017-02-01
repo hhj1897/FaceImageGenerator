@@ -16,8 +16,8 @@ class Facial_Expressions():
             histogram_normalization=False,
             mean_std_normalization=False,
             greyscale=False,
-            image_size = [96,128],
-            face_size = 96,
+            image_size = [128,192],
+            face_size = 128,
             rotation_range = 0,
             width_shift_range = 0,
             height_shift_range = 0,
@@ -45,17 +45,9 @@ class Facial_Expressions():
         self.fill_mode = fill_mode
         self.random_flip = random_flip
 
-
-        if path_to_shape_model:
-            pwd = os.path.abspath(path_to_shape_model)
-            self.detector = dlib.get_frontal_face_detector()
-            self.shape_predictor = dlib.shape_predictor( pwd+'/shape_predictor_68_face_landmarks.dat' )
-            with h5py.File(os.path.dirname(__file__)+'/data/mean_shape.h5') as tmp:
-                self.mean_shape = tmp['data'][::]
-                self.connections = tmp['connections'][::]
-        else:
-            self.detector = None
-            self.shape_predictor = None 
+        with h5py.File(os.path.dirname(__file__)+'/data/mean_shape.h5') as tmp:
+            self.mean_shape = tmp['data'][::]
+            self.connections = tmp['connections'][::]
 
         # move to origin
         self.mean_shape[0]-=self.mean_shape.mean(1)[0]
@@ -68,6 +60,16 @@ class Facial_Expressions():
         # move back to center 
         self.mean_shape[0]+=image_size[0]/2
         self.mean_shape[1]+=image_size[1]/2
+
+        if path_to_shape_model:
+            pwd = os.path.abspath(path_to_shape_model)
+            self.detector = dlib.get_frontal_face_detector()
+            self.shape_predictor = dlib.shape_predictor( pwd+'/shape_predictor_68_face_landmarks.dat' )
+
+        else:
+            self.detector = None
+            self.shape_predictor = None 
+
 
         if allignment_type:
             assert(path_to_shape_model!=None),\
@@ -172,9 +174,9 @@ class Facial_Expressions():
             t0 += batch_size
             t1 += batch_size
 
-            yield batch_img
+            yield np.stack(batch_img), np.stack(batch_pts)
 
-    def process_image(self, img, extract_bbox, preprocess, augment, add_mask):
+    def process_image(self, img, extract_bbox, preprocess, augment):
         '''
         '''
         if extract_bbox:
