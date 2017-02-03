@@ -53,7 +53,6 @@ class Facial_Expressions():
             self.detector = None
             self.shape_predictor = None 
 
-
     def flow_from_hdf5(self, 
             path_to_file, 
             group_name,
@@ -61,39 +60,43 @@ class Facial_Expressions():
             extract_bbox = False,
             add_mask=False,
             preprocessing = False,
+            postprocessing = None,
             augment=False,
-            normalizer = False,
-            downscaling = 1,
-            seed=None,
             save_to_dir=None,
             ):
         '''
         '''
         f = h5py.File(path_to_file)
         data = f[group_name]
-        
 
         t0 = 0
         t1 = batch_size
-        num_batch = 0
+        num_samples = data.shape[0]
+        batch_counter = 0
 
         while True:
-            num_batch += 1
-            t1 = min(data.shape[0],t1)
-            if t0>=data.shape[0]:
-                t0=0
+
+            # repeat iteration over all frames if end is reached
+            t1 = min( num_samples, t1 )
+            if t0 >= num_samples:
+                t0 = 0
                 t1 = batch_size
 
-            batch = data[t0:t1,::downscaling,::downscaling]
+            batch = data[t0:t1]
             batch_out = []
 
-            for img in batch: 
-                img, pts  = self.run_pipeline(img, extract_bbox, preprocessing, augment)
-                if normalizer:
-                    img = normalizer(img)
+            for sample, img in enumerate(batch):
+
+                # apply processing pipeline
+                img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
+                if postprocessing:img = postprocessing(img)
                 batch_out.append(img)
 
+                if save_to_dir!=None:
+                    out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
+                    save_image(img, out_path)
 
+            batch_counter+=1
             t0 += batch_size
             t1 += batch_size
 
@@ -107,7 +110,6 @@ class Facial_Expressions():
             add_mask=False,
             preprocessing = False,
             augment=False,
-            seed=None,
             save_to_dir=None,
             ):
  
@@ -145,7 +147,6 @@ class Facial_Expressions():
                     out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
                     save_image(img, out_path, pts, add_mask)
 
-            
             batch_counter+=1
             t0 += batch_size
             t1 += batch_size

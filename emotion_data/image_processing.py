@@ -134,4 +134,7 @@ def save_image(img, pwd, pts=None, add_mask=False, connections=connections):
     img = np.float32(img)
     img-=img.min()
     img/=img.max()
+    if img.shape[-1]==1:img=img[:,:,0]
     imsave(pwd,img)
+
+    
