@@ -18,15 +18,37 @@ fg = emotion_data.provider.Facial_Expressions(
         )
 
 
-img_tr_folder = fg.flow_from_folder(
-        './test_data/images','jpg', 
-        batch_size=3, 
-        extract_bbox=True, 
-        preprocess=True, 
-        augment=False, 
-        # add_mask=True, 
-        save_to_dir='./tmp/'
-        )
+# img_tr_folder = fg.flow_from_folder(
+        # './test_data/images','jpg', 
+        # batch_size=3, 
+        # extract_bbox=True, 
+        # preprocess=True, 
+        # augment=False, 
+        # # add_mask=True, 
+        # save_to_dir='./tmp/'
+        # )
 
-for i in range(5):
-    next(img_tr_folder)
+# img_tr_folder = fg.flow_from_hdf5(
+        # './disfa/test.h5','img', 
+        # batch_size=3, 
+        # extract_bbox=False, 
+        # preprocess=False, 
+        # augment=False, 
+        # save_to_dir='./tmp/'
+        # )
+
+import h5py
+from skimage.io import imsave
+f = h5py.File('./disfa/train.h5')
+print(f['img'].shape)
+print(f['pts'].shape)
+print(f['lab'].shape)
+img = f['img'][-11]
+import numpy as np
+print(np.argmax(f['lab'][-11],1))
+img-=img.min()
+img/=img.max()
+imsave('test.png',img[:,:,0])
+
+# for i in range(5):
+    # next(img_tr_folder)

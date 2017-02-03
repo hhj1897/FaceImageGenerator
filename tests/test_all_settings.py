@@ -1,5 +1,4 @@
 import emotion_data
-from skimage.io import imread
 
 test=0
 for histogram_normalization in [True,False]:
@@ -7,10 +6,11 @@ for histogram_normalization in [True,False]:
         for greyscale in [True,False]:
             for preprocessing in [True,False]:
                 for augment in [True,False]:
+                    for extract_bbox in [True,False]:
 
-                    fg = emotion_data.provider.Facial_Expressions(
-                                histogram_normalization=histogram_normalization,
-                                mean_std_normalization=mean_std_normalization,
+                        fg = emotion_data.provider.Facial_Expressions(
+                                    histogram_normalization=histogram_normalization,
+                                    mean_std_normalization=mean_std_normalization,
                                 greyscale=greyscale,
                                 rotation_range = 10,
                                 width_shift_range = 0.05,
@@ -25,28 +25,23 @@ for histogram_normalization in [True,False]:
                             )
 
 
-                    img_tr_folder = fg.flow_from_folder(
-                            './test_data/images','jpg', 
-                            batch_size=3, 
-                            extract_bbox=True, 
-                            preprocess=preprocessing, 
-                            augment=augment, 
-                            add_mask=True, 
-                            save_to_dir='./tmp/'
-                            )
+                        img_tr_folder = fg.flow_from_folder(
+                                './test_data/images','jpg', 
+                                batch_size=3, 
+                                extract_bbox=extract_bbox, 
+                                preprocess=preprocessing, 
+                                augment=augment, 
+                                add_mask=True, 
+                                )
 
-                    batch = next(img_tr_folder)
+                        batch = next(img_tr_folder)
 
-                    out_stored = imread('./tmp/00001_00001.jpg')
-                    out_from_batch = batch[0]
+                        if extract_bbox:
+                            assert(len(batch)==2)
+                            assert(batch[0].shape[0]==3)
+                            assert(batch[1].shape[0]==3)
+                        else:
+                            assert(len(batch)==3)
 
-
-                    test+=1
-                    print(test)
-                    print(histogram_normalization)
-                    print(mean_std_normalization)
-                    print(greyscale)
-                    print(preprocessing)
-                    print(augment)
-                    assert(out_stored.shape[:2] == out_from_batch.shape[:2])
-                    assert(out_stored.mean()>0)
+                        test+=1
+                        print(test)
