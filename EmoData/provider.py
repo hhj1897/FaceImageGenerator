@@ -3,6 +3,7 @@ import dlib
 import os
 import numpy as np
 import glob
+from tqdm import tqdm
 from skimage.color import rgb2gray, gray2rgb
 from skimage.io import imread
 from skimage import transform, exposure
@@ -177,6 +178,7 @@ class Facial_Expressions():
 
             if self.make_grayscale and img.shape[-1]==3:
                 img = rgb2gray(img)
+
             img = np.float32(img)
 
             if self.histogram_normalization:
@@ -218,6 +220,86 @@ class Facial_Expressions():
             # pts = trans.inverse(pts)
 
         if self.add_mask:
-            img = add_landmarks_to_img(img,pts)
+            img = add_landmarks_to_img(img, pts)
 
+        
         return img, pts
+
+    def flow_from_hdf5_list(self, 
+            list_of_paths, 
+            batch_size=64,
+            extract_bbox = False,
+            preprocessing = False,
+            postprocessing = None,
+            augment=False,
+            downscaling = 1,
+            downsampling = 1,
+            shuffle = False,
+            ):
+        '''
+        '''
+        groups = {}
+        with h5py.File(list_of_paths[0]) as f:
+            for g in f.keys():groups[g]=[]
+    
+        for path in tqdm(list_of_paths):
+            with h5py.File(path) as f:
+                for g in f.keys():
+                    if g=='img':
+                        groups[g].append(f[g][::downsampling,::downscaling,::downscaling])
+                    else:
+                        groups[g].append(f[g][::downsampling])
+
+        
+        
+        for g in groups:
+            groups[g] = np.vstack(groups[g])
+
+
+        idx = np.arange(groups['img'].shape[0])
+        if shuffle:
+            np.random.shuffle(idx)
+            for g in groups:groups[g]=groups[g][idx]
+
+        def _make_generator(data, include_pipeline = False):
+            t0 = 0
+            t1 = batch_size
+            num_samples = data.shape[0]
+            batch_counter = 0
+
+            while True:
+
+                # repeat iteration over all frames if end is reached
+                t1 = min( num_samples, t1 )
+                if t0 >= num_samples:
+                    t0 = 0
+                    t1 = batch_size
+
+                batch = data[t0:t1]
+
+                if include_pipeline:
+
+                    batch_out = []
+
+                    for img in batch:
+                        # apply processing pipeline
+                        img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
+                        if postprocessing:img = postprocessing(img)
+                        batch_out.append(img)
+                    
+                    batch = np.stack(batch_out)
+
+                batch_counter+=1
+                t0 += batch_size
+                t1 += batch_size
+
+                yield batch
+
+        res_gen = {}
+        for g in groups:
+            if g=='img':
+                res_gen[g] = _make_generator(groups[g], True)
+            else:
+                res_gen[g] = _make_generator(groups[g], False)
+
+        return res_gen
