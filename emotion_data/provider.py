@@ -7,7 +7,7 @@ from skimage.color import rgb2gray, gray2rgb
 from skimage.io import imread
 from skimage import transform, exposure
 from .image_augmentation import rotate, zoom, width_shift, height_shift
-from .image_processing import bbox_extractor, save_image
+from .image_processing import bbox_extractor, save_image, add_landmarks_to_img 
 
 
 class Facial_Expressions():
@@ -25,6 +25,7 @@ class Facial_Expressions():
             random_flip = True,
             path_to_shape_model = None,
             allignment_type = 'similarity',
+            add_mask=False,
             ):
         '''
         '''
@@ -44,6 +45,8 @@ class Facial_Expressions():
         self.fill_mode = fill_mode
         self.random_flip = random_flip
 
+        self.add_mask = add_mask
+
 
         if path_to_shape_model:
             pwd = os.path.abspath(path_to_shape_model)
@@ -58,7 +61,6 @@ class Facial_Expressions():
             group_name,
             batch_size=64,
             extract_bbox = False,
-            add_mask=False,
             preprocessing = False,
             postprocessing = None,
             augment=False,
@@ -107,7 +109,6 @@ class Facial_Expressions():
             suffix,
             batch_size=64,
             extract_bbox = False,
-            add_mask=False,
             preprocessing = False,
             augment=False,
             save_to_dir=None,
@@ -145,7 +146,7 @@ class Facial_Expressions():
 
                 if save_to_dir!=None:
                     out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
-                    save_image(img, out_path, pts, add_mask)
+                    save_image(img, out_path)
 
             batch_counter+=1
             t0 += batch_size
@@ -215,5 +216,8 @@ class Facial_Expressions():
             img = (img*(max_val-min_val))+min_val
 
             # pts = trans.inverse(pts)
+
+        if self.add_mask:
+            img = add_landmarks_to_img(img,pts)
 
         return img, pts

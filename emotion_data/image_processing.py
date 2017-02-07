@@ -15,6 +15,32 @@ with h5py.File(os.path.dirname(__file__)+'/data/mean_shape.h5') as tmp:
     mean_shape = tmp['data'][::]
     connections = tmp['connections'][::]
 
+def add_landmarks_to_img(img, pts):
+    radius = max(pts.max(0)-pts.min(0))/60
+    max_val = np.max(img)
+    if len(img.shape)==2:img = gray2rgb(img)
+    for x,y in np.int16(pts):
+        rr, cc = draw.circle(y, x, radius)
+        try:
+            img[rr, cc, 0] = max_val
+            img[rr, cc, 1] = max_val
+            img[rr, cc, 2] = 0
+        except IndexError:
+            pass
+
+    for p0, p1 in connections:
+        x = np.int16(pts[p0])
+        y = np.int16(pts[p1])
+
+        rr, cc, val = draw.line_aa(x[1],x[0],y[1],y[0])
+        try:
+            img[rr, cc, 1] = max_val
+        except IndexError:
+            pass
+
+    return img
+        
+
 def bbox_extractor(
         detector, 
         shape_predictor, 
@@ -102,35 +128,10 @@ def bbox_extractor(
 
     return img, pts
 
-def save_image(img, pwd, pts=None, add_mask=False, connections=connections):
+def save_image(img, pwd):
     '''
     '''
-
     if len(img.shape)==2:img=gray2rgb(img)
-
-    if add_mask and np.all(pts!=None):
-
-        radius = max(pts.max(0)-pts.min(0))/60
-        max_val = np.max(img)
-        for x,y in np.int16(pts):
-            rr, cc = draw.circle(y, x, radius)
-            try:
-                img[rr, cc, 0] = max_val
-                img[rr, cc, 1] = max_val
-                img[rr, cc, 2] = 0
-            except IndexError:
-                pass
-    
-        for p0, p1 in connections:
-            x = np.int16(pts[p0])
-            y = np.int16(pts[p1])
-    
-            rr, cc, val = draw.line_aa(x[1],x[0],y[1],y[0])
-            try:
-                img[rr, cc, 1] = max_val
-            except IndexError:
-                pass
-            
     img = np.float32(img)
     img-=img.min()
     img/=img.max()

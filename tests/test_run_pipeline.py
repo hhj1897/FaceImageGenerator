@@ -27,5 +27,7 @@ print(out.shape, out.max(), out.min())
 out, pts = fg.run_pipeline(img, extract_bbox=True,  preprocessing=True,  augment=False)
 print(out.shape, out.max(), out.min())
 
-out, pts = fg.run_pipeline(img, extract_bbox=True,  preprocessing=True,  augment=True)
-print(out.shape, out.max(), out.min())
+# speedtest
+for i in range(100):
+    out, pts = fg.run_pipeline(img[::3,::3], extract_bbox=True,  preprocessing=True,  augment=False)
+    print(i, out.shape, out.max(), out.min())
