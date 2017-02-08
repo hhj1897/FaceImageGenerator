@@ -1,10 +1,10 @@
-import emotion_data
+import EmoData 
 path_to_shape_model = '/homes/rw2614/projects/shape_model/shape_predictor_68_face_landmarks.dat' 
 
 ###############################################################
 # reading images from folder
 ###############################################################
-fg = emotion_data.provider.Facial_Expressions()
+fg = EmoData.provider.Facial_Expressions()
 
 img_reader = fg.flow_from_folder( 
         path_to_folder = './test_data/images',
@@ -22,7 +22,7 @@ print(batch_img[0].shape)
 ################################################################
 # landmark detection and alignment
 ################################################################
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     path_to_shape_model = path_to_shape_model
     )
 
@@ -31,7 +31,6 @@ img_reader = fg.flow_from_folder(
         suffix = 'jpg', 
         batch_size = 10,
         extract_bbox = True,
-        add_mask = True,
         # save_to_dir = './tmp/'
         )
 
@@ -46,7 +45,7 @@ print(batch_pts[0].shape)
 ################################################################
 # histogram_normalization and mean_std_normalization 
 ################################################################
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
     mean_std_normalization = True,
     make_grayscale = True,
@@ -68,7 +67,7 @@ print(batch_img[0].shape)
 ###############################################################
 # landmark detection, alignment and normalization
 ###############################################################
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
     mean_std_normalization = True,
     make_grayscale = True,
@@ -95,7 +94,7 @@ print(batch_pts[0].shape)
 ################################################################
 # landmark detection, alignment, normalization and  augmentation
 ################################################################
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
     mean_std_normalization = True,
     make_grayscale = True,
@@ -115,7 +114,6 @@ img_reader = fg.flow_from_folder(
         extract_bbox = True,
         preprocessing = True,
         augment = True,
-        add_mask = True,
         save_to_dir = './tmp/'
         )
 

@@ -25,6 +25,8 @@ setup(
         "Topic :: Utilities",
         "License :: OSI Approved :: BSD License",
     ],
-    data_files = [],
+    data_files = [
+        ('./EmoData/data/', ['./EmoData/data/mean_shape.h5']),
+        ],
     packages=find_packages(),
 )

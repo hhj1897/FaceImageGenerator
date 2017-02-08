@@ -19,9 +19,10 @@ gen = fg.flow_from_hdf5_list(
         batch_size = 10,
         downscaling = 2,
         downsampling = 5,
+        inputer = 'remove',
         shuffle = True,
-        augment = True,
-        preprocessing = True,
+        augment = False,
+        preprocessing = False,
         )
 
 test = next(gen['img'])

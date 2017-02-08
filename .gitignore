@@ -1,2 +1,4 @@
 tmp*
 *.egg-info
+build
+dist

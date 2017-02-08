@@ -1,4 +1,4 @@
-import emotion_data
+import EmoData 
 import numpy as np
 
 path_to_shape_model = '/homes/rw2614/projects/shape_model/shape_predictor_68_face_landmarks.dat' 
@@ -8,7 +8,7 @@ path_to_shape_model = '/homes/rw2614/projects/shape_model/shape_predictor_68_fac
 ################################################################
 # landmark detection, alignment, normalization and  augmentation
 ################################################################
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
     mean_std_normalization = True,
     make_grayscale = True,

@@ -3,6 +3,7 @@ import dlib
 import os
 import numpy as np
 import glob
+import math
 from tqdm import tqdm
 from skimage.color import rgb2gray, gray2rgb
 from skimage.io import imread
@@ -11,7 +12,9 @@ from .image_augmentation import rotate, zoom, width_shift, height_shift
 from .image_processing import bbox_extractor, save_image, add_landmarks_to_img 
 
 
-class Facial_Expressions():
+
+class BASE():
+
     def __init__(self,
             histogram_normalization=False,
             mean_std_normalization=False,
@@ -56,6 +59,76 @@ class Facial_Expressions():
         else:
             self.detector = None
             self.shape_predictor = None 
+
+    def run_pipeline(self, img, extract_bbox, preprocessing, augment):
+        '''
+        '''
+        if extract_bbox:
+            img, pts  = bbox_extractor(
+                    self.detector, 
+                    self.shape_predictor, 
+                    img,
+                    self.output_size,
+                    self.face_size,
+                    self.allignment_type,
+                    self.fill_mode,
+                    )
+        else:
+            pts = None 
+
+        if preprocessing:
+
+            if self.make_grayscale and img.shape[-1]==3:
+                img = rgb2gray(img)
+
+            img = np.float32(img)
+
+            if self.histogram_normalization:
+                img = exposure.equalize_hist(img)
+
+            if self.mean_std_normalization:
+                img -= img.mean()
+                img /= img.std()
+
+        if augment:
+            # compute random rotation
+            deg = np.random.uniform(-self.rotation_range, self.rotation_range)
+            trans = rotate(img.shape, deg)
+
+            # compute random zooming
+            z = np.random.uniform(-self.zoom_range, self.zoom_range)
+            trans += zoom(img.shape, z)
+
+            # compute random shifting
+            shift = np.random.uniform(-self.width_shift_range, self.width_shift_range)
+            trans += width_shift(img.shape, shift)
+
+            # compute random shifting
+            shift = np.random.uniform(-self.height_shift_range, self.height_shift_range)
+            trans += height_shift(img.shape, shift)
+
+            if self.random_flip:
+                if np.random.rand()>0.5:
+                    img=img[:,::-1]
+
+            # scale image, apply transofrmation, scale it back
+            # values between -1 and 1 are required for the transformation 
+
+            min_val, max_val = img.min(), img.max()
+            img = (img-min_val)/(max_val-min_val)
+            img = transform.warp(img, trans, mode=self.fill_mode)
+            img = (img*(max_val-min_val))+min_val
+
+            # pts = trans.inverse(pts)
+
+        if self.add_mask:
+            img = add_landmarks_to_img(img, pts)
+
+        
+        return img, pts
+
+
+class Facial_Expressions(BASE):
 
     def flow_from_hdf5(self, 
             path_to_file, 
@@ -158,83 +231,18 @@ class Facial_Expressions():
             else:
                 yield batch_img, batch_pts
 
-    def run_pipeline(self, img, extract_bbox, preprocessing, augment):
-        '''
-        '''
-        if extract_bbox:
-            img, pts  = bbox_extractor(
-                    self.detector, 
-                    self.shape_predictor, 
-                    img,
-                    self.output_size,
-                    self.face_size,
-                    self.allignment_type,
-                    self.fill_mode,
-                    )
-        else:
-            pts = None 
-
-        if preprocessing:
-
-            if self.make_grayscale and img.shape[-1]==3:
-                img = rgb2gray(img)
-
-            img = np.float32(img)
-
-            if self.histogram_normalization:
-                img = exposure.equalize_hist(img)
-
-            if self.mean_std_normalization:
-                img -= img.mean()
-                img /= img.std()
-
-        if augment:
-            # compute random rotation
-            deg = np.random.uniform(-self.rotation_range, self.rotation_range)
-            trans = rotate(img.shape, deg)
-
-            # compute random zooming
-            z = np.random.uniform(-self.zoom_range, self.zoom_range)
-            trans += zoom(img.shape, z)
-
-            # compute random shifting
-            shift = np.random.uniform(-self.width_shift_range, self.width_shift_range)
-            trans += width_shift(img.shape, shift)
-
-            # compute random shifting
-            shift = np.random.uniform(-self.height_shift_range, self.height_shift_range)
-            trans += height_shift(img.shape, shift)
-
-            if self.random_flip:
-                if np.random.rand()>0.5:
-                    img=img[:,::-1]
-
-            # scale image, apply transofrmation, scale it back
-            # values between -1 and 1 are required for the transformation 
-
-            min_val, max_val = img.min(), img.max()
-            img = (img-min_val)/(max_val-min_val)
-            img = transform.warp(img, trans, mode=self.fill_mode)
-            img = (img*(max_val-min_val))+min_val
-
-            # pts = trans.inverse(pts)
-
-        if self.add_mask:
-            img = add_landmarks_to_img(img, pts)
-
-        
-        return img, pts
-
     def flow_from_hdf5_list(self, 
             list_of_paths, 
             batch_size=64,
             extract_bbox = False,
             preprocessing = False,
             postprocessing = None,
-            augment=False,
+            augment = False,
+            inputer = None,
             downscaling = 1,
             downsampling = 1,
             shuffle = False,
+            one_hot = True  
             ):
         '''
         '''
@@ -246,36 +254,54 @@ class Facial_Expressions():
             with h5py.File(path) as f:
                 for g in f.keys():
                     if g=='img':
-                        groups[g].append(f[g][::downsampling,::downscaling,::downscaling])
+                        dset = f[g][::downsampling,::downscaling,::downscaling]
                     else:
-                        groups[g].append(f[g][::downsampling])
+                        dset = f[g][::downsampling]
 
-        
+                    groups[g].append(dset)
+
         
         for g in groups:
             groups[g] = np.vstack(groups[g])
 
+        if inputer=='remove':
+            idx_good = np.ones(groups['img'].shape[0],dtype=bool)
 
-        idx = np.arange(groups['img'].shape[0])
+            for g in groups:
+                idx = np.isnan(np.sum(groups[g].reshape(groups[g].shape[0],-1),1))
+            idx_good[idx]=False
+
+            for g in groups:
+                print(groups[g].shape)
+                groups[g] = groups[g][idx_good]
+                print(groups[g].shape)
+
+
+        nb_samples = groups['img'].shape[0]
+        nb_batches = math.ceil(nb_samples/batch_size)
+
+        idx = np.arange(nb_samples)
         if shuffle:
             np.random.shuffle(idx)
             for g in groups:groups[g]=groups[g][idx]
 
-        def _make_generator(data, include_pipeline = False):
+        def _make_generator(data, include_pipeline = False, one_hot=False):
+            print(data.shape)
             t0 = 0
             t1 = batch_size
-            num_samples = data.shape[0]
+            nb_samples = data.shape[0]
             batch_counter = 0
-
+    
             while True:
 
                 # repeat iteration over all frames if end is reached
-                t1 = min( num_samples, t1 )
-                if t0 >= num_samples:
+                t1 = min( nb_samples, t1 )
+                if t0 >= nb_samples:
                     t0 = 0
                     t1 = batch_size
-
+    
                 batch = data[t0:t1]
+                if one_hot==False:batch=np.argmax(batch,2)
 
                 if include_pipeline:
 
@@ -286,6 +312,7 @@ class Facial_Expressions():
                         img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
                         if postprocessing:img = postprocessing(img)
                         batch_out.append(img)
+
                     
                     batch = np.stack(batch_out)
 
@@ -297,9 +324,14 @@ class Facial_Expressions():
 
         res_gen = {}
         for g in groups:
-            if g=='img':
-                res_gen[g] = _make_generator(groups[g], True)
+            if g=='lab':
+                res_gen[g] = _make_generator(groups[g], False, one_hot)
+            elif g=='img':
+                res_gen[g] = _make_generator(groups[g], True, True)
             else:
-                res_gen[g] = _make_generator(groups[g], False)
+                res_gen[g] = _make_generator(groups[g], False, True)
+
+        res_gen['nb_samples']=nb_samples
+        res_gen['nb_batches']=nb_batches
 
         return res_gen
