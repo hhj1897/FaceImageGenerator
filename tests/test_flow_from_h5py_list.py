@@ -22,10 +22,12 @@ gen = fg.flow_from_hdf5_list(
         inputer = 'remove',
         shuffle = True,
         augment = False,
-        preprocessing = False,
+        preprocessing = True,
         )
 
 test = next(gen['img'])
+import numpy as np 
+assert((np.abs(test.mean()))<0.1)
 assert(test.shape==(10,48,32,1))
 
 test = next(gen['lab'])

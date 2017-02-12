@@ -19,8 +19,8 @@ class BASE():
             histogram_normalization=False,
             mean_std_normalization=False,
             make_grayscale = False,
-            output_size = [128,192],
-            face_size = 128,
+            output_size = [160,240],
+            face_size = 160,
             rotation_range = 10,
             width_shift_range = 0.05,
             height_shift_range = 0.05,
@@ -60,7 +60,7 @@ class BASE():
             self.detector = None
             self.shape_predictor = None 
 
-    def run_pipeline(self, img, extract_bbox, preprocessing, augment):
+    def run_pipeline(self, img, extract_bbox=False, preprocessing=False, augment=False, pts=None):
         '''
         '''
         if extract_bbox:
@@ -72,6 +72,7 @@ class BASE():
                     self.face_size,
                     self.allignment_type,
                     self.fill_mode,
+                    pts=pts,
                     )
         else:
             pts = None 
@@ -80,13 +81,14 @@ class BASE():
 
             if self.make_grayscale and img.shape[-1]==3:
                 img = rgb2gray(img)
-
-            img = np.float32(img)
+                img = img[:,:,None]
 
             if self.histogram_normalization:
+                img = np.float32(img)
                 img = exposure.equalize_hist(img)
 
             if self.mean_std_normalization:
+                img = np.float32(img)
                 img -= img.mean()
                 img /= img.std()
 
@@ -124,6 +126,8 @@ class BASE():
         if self.add_mask:
             img = add_landmarks_to_img(img, pts)
 
+        if np.any(np.isnan(img)):
+            img = np.zeros_like(img)
         
         return img, pts
 
@@ -145,38 +149,45 @@ class Facial_Expressions(BASE):
         f = h5py.File(path_to_file)
         data = f[group_name]
 
-        t0 = 0
-        t1 = batch_size
-        num_samples = data.shape[0]
-        batch_counter = 0
+        self.nb_samples = data.shape[0]
+        self.nb_batches = math.ceil(self.nb_samples/batch_size)
+        def _make_generator(data):
 
-        while True:
+            t0 = 0
+            t1 = batch_size
+            batch_counter = 0
 
-            # repeat iteration over all frames if end is reached
-            t1 = min( num_samples, t1 )
-            if t0 >= num_samples:
-                t0 = 0
-                t1 = batch_size
+            num_samples=data.shape[0]
 
-            batch = data[t0:t1]
-            batch_out = []
+            while True:
 
-            for sample, img in enumerate(batch):
+                # repeat iteration over all frames if end is reached
+                t1 = min( num_samples, t1 )
+                if t0 >= num_samples:
+                    t0 = 0
+                    t1 = batch_size
 
-                # apply processing pipeline
-                img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
-                if postprocessing:img = postprocessing(img)
-                batch_out.append(img)
+                batch = data[t0:t1]
+                batch_out = []
 
-                if save_to_dir!=None:
-                    out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
-                    save_image(img, out_path)
+                for sample, img in enumerate(batch):
 
-            batch_counter+=1
-            t0 += batch_size
-            t1 += batch_size
+                    # apply processing pipeline
+                    img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
+                    if postprocessing:img = postprocessing(img)
+                    batch_out.append(img)
 
-            yield np.stack(batch_out)
+                    if save_to_dir!=None:
+                        out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
+                        save_image(img, out_path)
+
+                batch_counter+=1
+                t0 += batch_size
+                t1 += batch_size
+
+                yield np.stack(batch_out)
+
+        return _make_generator(data)
 
     def flow_from_folder(self, 
             path_to_folder, 
@@ -269,13 +280,20 @@ class Facial_Expressions(BASE):
 
             for g in groups:
                 idx = np.isnan(np.sum(groups[g].reshape(groups[g].shape[0],-1),1))
-            idx_good[idx]=False
+                idx_good[idx]=False
+                idx = np.sum(groups[g].reshape(groups[g].shape[0],-1),1)==0
+                idx_good[idx]=False
 
             for g in groups:
-                print(groups[g].shape)
                 groups[g] = groups[g][idx_good]
-                print(groups[g].shape)
 
+        # apply preprocessing first
+        if preprocessing:
+            out = []
+            for i,img in enumerate(groups['img']):
+                img, _ = self.run_pipeline(img, False, preprocessing=True)
+                out.append(img)
+        groups['img'] = np.stack(out)
 
         nb_samples = groups['img'].shape[0]
         nb_batches = math.ceil(nb_samples/batch_size)
@@ -285,8 +303,7 @@ class Facial_Expressions(BASE):
             np.random.shuffle(idx)
             for g in groups:groups[g]=groups[g][idx]
 
-        def _make_generator(data, include_pipeline = False, one_hot=False):
-            print(data.shape)
+        def _make_generator(data, augment=False, one_hot=False):
             t0 = 0
             t1 = batch_size
             nb_samples = data.shape[0]
@@ -303,18 +320,13 @@ class Facial_Expressions(BASE):
                 batch = data[t0:t1]
                 if one_hot==False:batch=np.argmax(batch,2)
 
-                if include_pipeline:
-
-                    batch_out = []
-
-                    for img in batch:
-                        # apply processing pipeline
-                        img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
-                        if postprocessing:img = postprocessing(img)
-                        batch_out.append(img)
-
-                    
-                    batch = np.stack(batch_out)
+                if augment:
+                    out = []
+                    # apply augmentation 
+                    for i,img in enumerate(batch):
+                        img, _ = self.run_pipeline(img, augment=True )
+                        out.append(img)
+                    batch = np.stack(out)
 
                 batch_counter+=1
                 t0 += batch_size
@@ -324,10 +336,10 @@ class Facial_Expressions(BASE):
 
         res_gen = {}
         for g in groups:
-            if g=='lab':
+            if g=='img':
+                res_gen[g] = _make_generator(groups[g], augment, True)
+            elif g=='lab':
                 res_gen[g] = _make_generator(groups[g], False, one_hot)
-            elif g=='img':
-                res_gen[g] = _make_generator(groups[g], True, True)
             else:
                 res_gen[g] = _make_generator(groups[g], False, True)
 

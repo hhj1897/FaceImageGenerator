@@ -40,7 +40,6 @@ def add_landmarks_to_img(img, pts):
 
     return img
         
-
 def bbox_extractor(
         detector, 
         shape_predictor, 
@@ -51,6 +50,7 @@ def bbox_extractor(
         fill_mode = 'edge',
         fix_pts ='all',
         mean_shape = mean_shape,
+        pts = None
         ):
 
     ################################################################
@@ -84,13 +84,14 @@ def bbox_extractor(
 
     # if tracking fails: return zeros
     if len(rect)==0:
-        return np.zeros(output_size[::-1]), mean_shape.T
+        return np.zeros([output_size[1],output_size[0],img.shape[-1]]), np.zeros_like(mean_shape.T)
 
     # get landmarks form bbox
-    bbox = rect[0]
-    shape = shape_predictor(tmp, bbox)
-    pts = np.vstack([ [p.x, p.y] for p in shape.parts() ])
-    ################################################################
+    if pts is None:
+        bbox = rect[0]
+        shape = shape_predictor(tmp, bbox)
+        pts = np.vstack([ [p.x, p.y] for p in shape.parts() ])
+        ################################################################
 
 
     
@@ -137,5 +138,3 @@ def save_image(img, pwd):
     img/=img.max()
     if img.shape[-1]==1:img=img[:,:,0]
     imsave(pwd,img)
-
-    
