@@ -111,7 +111,7 @@ def bbox_extractor(
     # scale input image 
     # (skimage requires values between -1 and 1 for the transformation)
     min_val, max_val = img.min(), img.max()
-    img = (img-min_val)/max_val
+    img = (img-min_val)/float(max_val)
 
     img = transform.warp(
             img, 
