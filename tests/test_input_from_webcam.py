@@ -1,8 +1,8 @@
 # from skimage.io import imread
-import emotion_data
+import EmoData 
 path_to_shape_model = '/homes/rw2614/projects/shape_model/shape_predictor_68_face_landmarks.dat'
 
-fg = emotion_data.provider.Facial_Expressions(
+fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
     mean_std_normalization = True,
     make_grayscale = True,
