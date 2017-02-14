@@ -345,5 +345,8 @@ class Facial_Expressions(BASE):
 
         res_gen['nb_samples']=nb_samples
         res_gen['nb_batches']=nb_batches
+        res_gen['img_shape']=groups['img'].shape[1:]
+        res_gen['pts_shape']=groups['pts'].shape[1:]
+        res_gen['lab_shape']=groups['lab'].shape[1:]
 
         return res_gen
