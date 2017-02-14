@@ -124,10 +124,10 @@ def bbox_extractor(
     img = (img*max_val)+min_val
 
     # apply transformation on facial points
-    pts = trans.inverse(pts)
+    pts_img = trans.inverse(pts)
     ################################################################
 
-    return img, pts
+    return img, pts_img, pts
 
 def save_image(img, pwd):
     '''

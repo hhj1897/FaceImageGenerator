@@ -60,11 +60,19 @@ class BASE():
             self.detector = None
             self.shape_predictor = None 
 
-    def run_pipeline(self, img, extract_bbox=False, preprocessing=False, augment=False, pts=None):
+    def run_pipeline(self, 
+            img, 
+            extract_bbox = False, 
+            preprocessing = False, 
+            augment = False, 
+            pts = None,
+            pts_out = 'pts',
+            ):
         '''
+        pts_out: {'pts','pts_raw','both'}
         '''
         if extract_bbox:
-            img, pts  = bbox_extractor(
+            img, pts, pts_raw  = bbox_extractor(
                     self.detector, 
                     self.shape_predictor, 
                     img,
@@ -72,10 +80,11 @@ class BASE():
                     self.face_size,
                     self.allignment_type,
                     self.fill_mode,
-                    pts=pts,
+                    pts = pts,
                     )
         else:
             pts = None 
+            pts_raw = None 
 
         if preprocessing:
 
@@ -121,7 +130,8 @@ class BASE():
             img = transform.warp(img, trans, mode=self.fill_mode)
             img = (img*(max_val-min_val))+min_val
 
-            # pts = trans.inverse(pts)
+            if pts!=None:
+                pts = trans.inverse(pts)
 
         if self.add_mask:
             img = add_landmarks_to_img(img, pts)
@@ -129,7 +139,14 @@ class BASE():
         if np.any(np.isnan(img)):
             img = np.zeros_like(img)
         
-        return img, pts
+        if pts_out == 'pts':
+            return img, pts
+
+        elif pts_out == 'pts_raw':
+            return img, pts_raw
+
+        elif pts_out == 'both': 
+            return img, pts, pts_raw
 
 
 class Facial_Expressions(BASE):
@@ -328,7 +345,7 @@ class Facial_Expressions(BASE):
                         out.append(img)
                     batch = np.stack(out)
 
-                batch_counter+=1
+                batch_counter += 1
                 t0 += batch_size
                 t1 += batch_size
 
