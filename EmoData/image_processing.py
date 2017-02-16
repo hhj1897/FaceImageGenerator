@@ -84,7 +84,9 @@ def bbox_extractor(
 
     # if tracking fails: return zeros
     if len(rect)==0:
-        return np.zeros([output_size[1],output_size[0],img.shape[-1]]), np.zeros_like(mean_shape.T)
+        img_null = np.zeros([output_size[1],output_size[0],img.shape[-1]])
+        pts_null = np.zeros_like(mean_shape.T)
+        return img_null, pts_null, pts_null
 
     # get landmarks form bbox
     if pts is None:

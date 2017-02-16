@@ -310,7 +310,7 @@ class Facial_Expressions(BASE):
             for i,img in enumerate(groups['img']):
                 img, _ = self.run_pipeline(img, False, preprocessing=True)
                 out.append(img)
-        groups['img'] = np.stack(out)
+            groups['img'] = np.stack(out)
 
         nb_samples = groups['img'].shape[0]
         nb_batches = math.ceil(nb_samples/batch_size)
