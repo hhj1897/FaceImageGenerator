@@ -16,11 +16,11 @@ fg = EmoData.provider.Facial_Expressions(
 
 
 # load images
-from skimage.io import imread
+from skimage.io import imread, imsave
 img = imread('./test_data/images/test_01.jpg')
 print(img.shape)
 
-# pipeline 1) image goes trough the pipeline without any processings
+# pipeline 1) image goes trough the pipeline without any processing
 out, pts = fg.run_pipeline(img, extract_bbox=False, preprocessing=False, augment=False)
 print(out.shape, out.max(), out.min())
 
@@ -35,3 +35,10 @@ print(out.shape, out.max(), out.min())
 # pipeline 3) face detection, cropping, alignment, normalization and augmentation
 out, pts = fg.run_pipeline(img, extract_bbox=True,  preprocessing=True,  augment=False)
 print(out.shape, out.max(), out.min())
+
+
+# scale output to have values between 0 and 1
+out-=out.min()
+out/=out.max()
+# store image
+imsave('test.png',out[:,:,0])
