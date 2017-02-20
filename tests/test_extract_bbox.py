@@ -43,11 +43,10 @@ print(batch_pts[0].shape)
 
 
 ################################################################
-# histogram_normalization and mean_std_normalization 
+# just histogram_normalization 
 ################################################################
 fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
-    mean_std_normalization = True,
     make_grayscale = True,
     )
 
@@ -69,7 +68,6 @@ print(batch_img[0].shape)
 ###############################################################
 fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
-    mean_std_normalization = True,
     make_grayscale = True,
     path_to_shape_model = path_to_shape_model
     )
@@ -96,7 +94,6 @@ print(batch_pts[0].shape)
 ################################################################
 fg = EmoData.provider.Facial_Expressions(
     histogram_normalization = True,
-    mean_std_normalization = True,
     make_grayscale = True,
     path_to_shape_model = path_to_shape_model,
     output_size = [128,192],
