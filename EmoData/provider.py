@@ -17,7 +17,6 @@ class BASE():
 
     def __init__(self,
             histogram_normalization=False,
-            mean_std_normalization=False,
             make_grayscale = False,
             output_size = [160,240],
             face_size = 160,
@@ -39,7 +38,6 @@ class BASE():
         # {'similarity','affine','projective'}
 
         self.histogram_normalization = histogram_normalization
-        self.mean_std_normalization = mean_std_normalization
         self.make_grayscale = make_grayscale
 
         self.rotation_range = rotation_range
@@ -71,6 +69,7 @@ class BASE():
         '''
         pts_out: {'pts','pts_raw','both'}
         '''
+
         if extract_bbox:
             img, pts, pts_raw  = bbox_extractor(
                     self.detector, 
@@ -86,8 +85,17 @@ class BASE():
             pts = None 
             pts_raw = None 
 
-        if preprocessing:
 
+        # normalize input to float32 [0, 1]
+        img = np.float32(img)
+        if np.all(img==0):
+            pass
+        else:
+            img -= img.min()
+            img /= img.max()
+
+
+        if preprocessing:
             if self.make_grayscale and img.shape[-1]==3:
                 img = rgb2gray(img)
                 img = img[:,:,None]
@@ -96,21 +104,16 @@ class BASE():
                 img = np.float32(img)
                 img = exposure.equalize_hist(img)
 
-            if self.mean_std_normalization:
-                img = np.float32(img)
-                img -= img.mean()
-                img /= img.std()
-
         if augment:
             # compute random rotation
             deg = np.random.uniform(-self.rotation_range, self.rotation_range)
             trans = rotate(img.shape, deg)
 
-            # compute random zooming
+            # # compute random zooming
             z = np.random.uniform(-self.zoom_range, self.zoom_range)
             trans += zoom(img.shape, z)
 
-            # compute random shifting
+            # # compute random shifting
             shift = np.random.uniform(-self.width_shift_range, self.width_shift_range)
             trans += width_shift(img.shape, shift)
 
@@ -122,22 +125,14 @@ class BASE():
                 if np.random.rand()>0.5:
                     img=img[:,::-1]
 
-            # scale image, apply transofrmation, scale it back
-            # values between -1 and 1 are required for the transformation 
+            img_tr = transform.warp(img, trans, mode=self.fill_mode)
+            # if transformation is valid, update image
+            if not (np.all(img==0) or np.any(np.isnan(img))):
+                img = img_tr 
+                if pts!=None:
+                    pts = trans.inverse(pts)
 
-            min_val, max_val = img.min(), img.max()
-            img = (img-min_val)/(max_val-min_val)
-            img = transform.warp(img, trans, mode=self.fill_mode)
-            img = (img*(max_val-min_val))+min_val
 
-            if pts!=None:
-                pts = trans.inverse(pts)
-
-        if self.add_mask:
-            img = add_landmarks_to_img(img, pts)
-
-        if np.any(np.isnan(img)):
-            img = np.zeros_like(img)
         
         if pts_out == 'pts':
             return img, pts
@@ -153,22 +148,23 @@ class Facial_Expressions(BASE):
 
     def flow_from_hdf5(self, 
             path_to_file, 
-            group_name,
             batch_size=64,
             extract_bbox = False,
+            augment = False,
             preprocessing = False,
-            postprocessing = None,
-            augment=False,
-            save_to_dir=None,
+            img_postprocessing = None,
+            pts_postprocessing = None,
+            lab_postprocessing = None,
             ):
         '''
         '''
         f = h5py.File(path_to_file)
-        data = f[group_name]
+        data = f['lab']
 
-        self.nb_samples = data.shape[0]
-        self.nb_batches = math.ceil(self.nb_samples/batch_size)
-        def _make_generator(data):
+        nb_samples = data.shape[0]
+        nb_batches = math.ceil(nb_samples/batch_size)
+
+        def _make_generator(data, postprocessing=None, apply_pipeline=False):
 
             t0 = 0
             t1 = batch_size
@@ -187,24 +183,39 @@ class Facial_Expressions(BASE):
                 batch = data[t0:t1]
                 batch_out = []
 
-                for sample, img in enumerate(batch):
+                for img in batch:
 
                     # apply processing pipeline
-                    img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
-                    if postprocessing:img = postprocessing(img)
+                    if apply_pipeline:
+                        img, _ = self.run_pipeline(img, extract_bbox, preprocessing, augment)
+
+                    if postprocessing:
+                        img = postprocessing(img)
+                    
                     batch_out.append(img)
 
-                    if save_to_dir!=None:
-                        out_path = save_to_dir+'/'+str(batch_counter).zfill(5)+'_'+str(sample+1).zfill(5)+'.jpg'
-                        save_image(img, out_path)
+                batch = np.stack(batch_out)
 
                 batch_counter+=1
                 t0 += batch_size
                 t1 += batch_size
 
-                yield np.stack(batch_out)
+                yield batch
 
-        return _make_generator(data)
+        res_gen = {}
+        res_gen['nb_samples']=nb_samples
+        res_gen['nb_batches']=nb_batches
+        res_gen['img_shape']=f['img'].shape[1:]
+        res_gen['pts_shape']=f['pts'].shape[1:]
+        res_gen['lab_shape']=f['lab'].shape[1:]
+        res_gen['nb_outputs']=f['lab'].shape[1]
+        res_gen['nb_classes']=f['lab'].shape[2]
+        res_gen['img'] = _make_generator(f['img'], img_postprocessing, True)
+        res_gen['lab'] = _make_generator(f['lab'], lab_postprocessing)
+        res_gen['pts'] = _make_generator(f['pts'], lab_postprocessing)
+        return res_gen
+
+        # return _make_generator(data)
 
     def flow_from_folder(self, 
             path_to_folder, 
