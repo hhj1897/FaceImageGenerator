@@ -4,7 +4,10 @@ import numpy as np
 from tqdm import tqdm
 import os
 
-def merge_h5(in_path_list, out_path, shuffle=False, inputer=None, downsample=1):
+def merge_h5(in_path_list, out_path, subject_ids=None, shuffle=False, downsample=1):
+
+    if subject_ids:
+        sub_idx = []
 
     if os.path.exists(out_path+'.tmp.h5'):
         os.remove(out_path+'.tmp.h5')
@@ -22,9 +25,11 @@ def merge_h5(in_path_list, out_path, shuffle=False, inputer=None, downsample=1):
 
             if i==0:
                 for group in f.keys():
+                    dat = f[group][::downsample]
+
                     f_tmp.create_dataset(
                             group,
-                            data=f[group][::downsample], 
+                            data=dat,
                             maxshape=(None,*f[group].shape[1:])
                             )
 
@@ -38,6 +43,15 @@ def merge_h5(in_path_list, out_path, shuffle=False, inputer=None, downsample=1):
                         ))
                     f_tmp[group][-dat.shape[0]:] = dat
 
+        if subject_ids:
+            sub = subject_ids[i]
+            nb_samples = dat.shape[0]
+            sub_idx.extend([sub]*nb_samples)
+
+    if subject_ids:
+        f_tmp.create_dataset('sub',data=np.array(sub_idx))
+
+
 
     idx = np.arange(f_tmp[list(f_tmp.keys())[0]].shape[0])
     if shuffle:random.shuffle(idx)
@@ -47,17 +61,18 @@ def merge_h5(in_path_list, out_path, shuffle=False, inputer=None, downsample=1):
 
         if i==0:
             for group in f_tmp.keys():
+                try:
+                    dat = f_tmp[group][frame_num][None,::]
+                except IndexError:
+                    dat = f_tmp[group][frame_num][None]
+
                 f_out.create_dataset(
                         group,
-                        data=f_tmp[group][frame_num][None,::],
+                        data=dat,
                         maxshape=(None,*f_tmp[group].shape[1:])
                         )
         else:
             for group in f_out.keys():
-                if group=='img':
-                    val = np.max(f_tmp[group][frame_num])
-                    if np.isnan(val):print(val)
-                    if val==0:print(val)
                 f_out[group].resize((
                     f_out[group].shape[0]+1, *f_out[group].shape[1:]
                     ))

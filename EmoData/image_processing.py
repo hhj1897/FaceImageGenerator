@@ -50,7 +50,6 @@ def bbox_extractor(
         fill_mode = 'edge',
         fix_pts ='all',
         mean_shape = mean_shape,
-        pts = None
         ):
 
     ################################################################
@@ -88,13 +87,13 @@ def bbox_extractor(
         pts_null = np.zeros_like(mean_shape.T)
         return img_null, pts_null, pts_null
 
+    ################################################################
     # get landmarks form bbox
-    if pts is None:
-        bbox = rect[0]
-        shape = shape_predictor(tmp, bbox)
-        pts = np.vstack([ [p.x, p.y] for p in shape.parts() ])
-        ################################################################
-
+    ################################################################
+    bbox = rect[0]
+    shape = shape_predictor(tmp, bbox)
+    pts = np.vstack([ [p.x, p.y] for p in shape.parts() ])
+    ################################################################
 
     
     ################################################################
@@ -123,13 +122,13 @@ def bbox_extractor(
             )
 
     # scale it back
-    img = (img*max_val)+min_val
+    box = (img*max_val)+min_val
 
     # apply transformation on facial points
-    pts_img = trans.inverse(pts)
+    pts_box = trans.inverse(pts)
     ################################################################
 
-    return img, pts_img, pts
+    return box, pts_box, pts
 
 def save_image(img, pwd):
     '''
