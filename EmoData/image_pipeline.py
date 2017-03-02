@@ -48,7 +48,7 @@ class FACE_pipeline():
         self.shape_predictor = None
         self.path_to_shape_model = path_to_shape_model
 
-    def run_pipeline(self, 
+    def transform(self, 
             img, 
             face_detect = False, 
             preprocessing = False, 
@@ -81,7 +81,7 @@ class FACE_pipeline():
             pts = None 
 
 
-        # normalize input to float32 [0, 1]
+        # normalize input to float32 with values between 0 and 1
         img = np.float32(img)
         if np.all(img==0):
             pass
@@ -128,3 +128,16 @@ class FACE_pipeline():
                     pts = trans.inverse(pts)
 
         return img, pts
+
+    def batch_transform(self, *args, **kwargs):
+        batch = args[0]
+        out_img = []
+        out_pts = []
+        for sample in batch:
+            out, pts = self.transform(sample, *args[1:], **kwargs)
+            out_img.append(out)
+            out_pts.append(pts)
+        out_img = np.stack(out_img)
+        out_pts = np.stack(out_pts)
+        return out_img, out_pts
+
