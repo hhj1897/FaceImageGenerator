@@ -10,9 +10,13 @@ from skimage import transform, exposure
 from .image_augmentation import rotate, zoom, width_shift, height_shift
 from .image_processing import bbox_extractor, save_image, add_landmarks_to_img 
 
-from multiprocessing import Pool
 
-
+def _sample_transform(arg_dict):
+    fun = arg_dict['fun']
+    args = arg_dict['args']
+    kwargs = arg_dict['kwargs']
+    img, pts = fun(*args, **kwargs)
+    return img, pts 
 
 
 class FACE_pipeline():
@@ -51,7 +55,6 @@ class FACE_pipeline():
         self.shape_predictor = None
         self.path_to_shape_model = path_to_shape_model
 
-        self.nb_workers=12
 
     def transform(self, 
             img, 
@@ -135,15 +138,8 @@ class FACE_pipeline():
 
         return img, pts
 
-    @staticmethod
-    def _sample_transform(arg_dict):
-        fun = arg_dict['fun']
-        args = arg_dict['args']
-        kwargs = arg_dict['kwargs']
-        img, pts = fun(*args, **kwargs)
-        return img, pts 
 
-    def batch_transform(self, batch, *args, **kwargs):
+    def batch_transform(self, pool, batch, *args, **kwargs):
 
         arg_list = []
         for sample in batch:
@@ -153,8 +149,7 @@ class FACE_pipeline():
             arg_dict['kwargs']=kwargs
             arg_list.append(arg_dict)
 
-        P = Pool(self.nb_workers)
-        out = P.map(self._sample_transform,arg_list)
+        out = pool.map(_sample_transform, arg_list)
 
         out_img = []
         out_pts = []
