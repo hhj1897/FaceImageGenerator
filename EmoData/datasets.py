@@ -13,6 +13,6 @@ def fera2015(batch_size=32):
 def disfa(batch_size=32):
     '''
     '''
-    TR = flow_from_hdf5('/homes/rw2614/data/NEW/similarity_160_240/disfa_te.h5', batch_size)
-    TE = flow_from_hdf5('/homes/rw2614/data/NEW/similarity_160_240/disfa_tr.h5', batch_size)
+    TR = flow_from_hdf5('/homes/rw2614/data/NEW/similarity_160_240/disfa_tr.h5', batch_size)
+    TE = flow_from_hdf5('/homes/rw2614/data/NEW/similarity_160_240/disfa_te.h5', batch_size)
     return TR, TE

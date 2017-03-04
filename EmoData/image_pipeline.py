@@ -9,14 +9,7 @@ from skimage.io import imread
 from skimage import transform, exposure
 from .image_augmentation import rotate, zoom, width_shift, height_shift
 from .image_processing import bbox_extractor, save_image, add_landmarks_to_img 
-
-
-def _sample_transform(arg_dict):
-    fun = arg_dict['fun']
-    args = arg_dict['args']
-    kwargs = arg_dict['kwargs']
-    img, pts = fun(*args, **kwargs)
-    return img, pts 
+import threading
 
 
 class FACE_pipeline():
@@ -139,24 +132,29 @@ class FACE_pipeline():
         return img, pts
 
 
-    def batch_transform(self, pool, batch, *args, **kwargs):
+    def batch_transform(self, batch, *args, **kwargs):
 
-        arg_list = []
-        for sample in batch:
-            arg_dict = {}
-            arg_dict['fun']=self.transform
-            arg_dict['args']=[sample, *args]
-            arg_dict['kwargs']=kwargs
-            arg_list.append(arg_dict)
+        threads = [None] * len(batch)
+        out_img = [None] * len(batch)
+        out_pts = [None] * len(batch)
 
-        out = pool.map(_sample_transform, arg_list)
+        def _target(i, sample, *args, **kwargs):
+            out = self.transform(sample, *args, **kwargs)
+            out_img[i] = out[0]
+            out_pts[i] = out[1]
 
-        out_img = []
-        out_pts = []
-        for img, pts in out:
-            out_img.append(img)
-            out_pts.append(pts)
+
+        for i, sample in enumerate(batch):
+            threads[i] = threading.Thread(
+                target=_target,
+                args=(i, sample, *args),
+                kwargs = kwargs,
+                )
+            threads[i].start()
+
+        for t in threads:t.join()
+        
         out_img = np.stack(out_img)
         out_pts = np.stack(out_pts)
-        return out_img, out_pts
 
+        return out_img, out_pts

@@ -3,7 +3,6 @@ import os
 from skimage.io import imread
 import glob
 pwd = os.path.dirname(os.path.abspath(__file__))
-import multiprocessing
 
 batch = []
 for f in glob.glob(pwd+'/data/images/test_*.jpg'):
@@ -26,10 +25,12 @@ class testcase:
 
     def test_batch_transform(self):
 
-        p = multiprocessing.Pool(5)
-
-        out, pts = pip.batch_transform(p, batch, face_detect=True)
+        out, pts = pip.batch_transform(batch, True, False)
         assert(out.shape==(12, 240, 160, 3))
+        assert(pts.shape==(12, 68, 2))
+
+        out, pts = pip.batch_transform(batch, True, True)
+        assert(out.shape==(12, 240, 160, 1))
         assert(pts.shape==(12, 68, 2))
 
 
