@@ -85,7 +85,7 @@ class FACE_pipeline():
 
         # normalize input to float32 with values between 0 and 1
         img = np.float32(img)
-        if np.all(img==0):
+        if np.all(img==img.item(0)):
             pass
         else:
             img -= img.min()
@@ -134,6 +134,8 @@ class FACE_pipeline():
 
     def batch_transform(self, batch, *args, **kwargs):
 
+        # parallel
+        ################################################################ 
         threads = [None] * len(batch)
         out_img = [None] * len(batch)
         out_pts = [None] * len(batch)
@@ -153,8 +155,25 @@ class FACE_pipeline():
             threads[i].start()
 
         for t in threads:t.join()
-        
+
         out_img = np.stack(out_img)
         out_pts = np.stack(out_pts)
 
         return out_img, out_pts
+
+
+        # serial
+        ################################################################ 
+
+        # out_img = [None] * len(batch)
+        # out_pts = [None] * len(batch)
+
+        # for i, sample in enumerate(batch):
+            # img, pts = self.transform(sample, *args, **kwargs)
+            # out_img[i] = img
+            # out_pts[i] = pts
+        
+        # out_img = np.stack(out_img)
+        # out_pts = np.stack(out_pts)
+
+        # return out_img, out_pts
