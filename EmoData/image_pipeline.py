@@ -19,6 +19,7 @@ class FACE_pipeline():
             grayscale = False,
             output_size = [160,240],
             face_size = 160,
+            resize = False,
             rotation_range = 10,
             width_shift_range = 0.05,
             height_shift_range = 0.05,
@@ -37,6 +38,7 @@ class FACE_pipeline():
 
         self.histogram_normalization = histogram_normalization
         self.grayscale = grayscale
+        self.resize = resize 
 
         self.rotation_range = rotation_range
         self.width_shift_range = width_shift_range
@@ -57,6 +59,8 @@ class FACE_pipeline():
             ):
 
         pts = None
+        img = gray2rgb(img)
+
         if face_detect:
 
             # load detector
@@ -99,6 +103,11 @@ class FACE_pipeline():
             if self.histogram_normalization:
                 img = np.float32(img)
                 img = exposure.equalize_hist(img)
+
+            if self.resize:
+                img = transform.resize(img, self.resize)
+
+
 
         if augmentation:
             # compute random rotation
@@ -160,20 +169,3 @@ class FACE_pipeline():
         out_pts = np.stack(out_pts)
 
         return out_img, out_pts
-
-
-        # serial
-        ################################################################ 
-
-        # out_img = [None] * len(batch)
-        # out_pts = [None] * len(batch)
-
-        # for i, sample in enumerate(batch):
-            # img, pts = self.transform(sample, *args, **kwargs)
-            # out_img[i] = img
-            # out_pts[i] = pts
-        
-        # out_img = np.stack(out_img)
-        # out_pts = np.stack(out_pts)
-
-        # return out_img, out_pts
