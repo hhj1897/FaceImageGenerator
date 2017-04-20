@@ -85,6 +85,7 @@ class FACE_pipeline():
                     )
         else:
             pts = None 
+            pts_raw = None
 
 
         # normalize input to float32 with values between 0 and 1
@@ -138,7 +139,7 @@ class FACE_pipeline():
                 if pts!=None:
                     pts = trans.inverse(pts)
 
-        return img, pts
+        return img, pts, pts_raw
 
 
     def batch_transform(self, batch, *args, **kwargs):
@@ -148,11 +149,13 @@ class FACE_pipeline():
         threads = [None] * len(batch)
         out_img = [None] * len(batch)
         out_pts = [None] * len(batch)
+        out_pts_raw = [None] * len(batch)
 
         def _target(i, sample, *args, **kwargs):
             out = self.transform(sample, *args, **kwargs)
             out_img[i] = out[0]
             out_pts[i] = out[1]
+            out_pts_raw[i] = out[2]
 
 
         for i, sample in enumerate(batch):
@@ -167,5 +170,6 @@ class FACE_pipeline():
 
         out_img = np.stack(out_img)
         out_pts = np.stack(out_pts)
+        out_pts_raw = np.stack(out_pts_raw)
 
-        return out_img, out_pts
+        return out_img, out_pts, out_pts_raw
