@@ -26,33 +26,33 @@ class testcase:
 
     def _test_batch_transform(self):
 
-        out, pts = pip.batch_transform(batch, True, False)
+        out, pts, pts_raw= pip.batch_transform(batch, True, False)
         assert(out.shape==(12, 240, 160, 3))
         assert(pts.shape==(12, 68, 2))
 
-        out, pts = pip.batch_transform(batch, True, True)
+        out, pts, pts_raw = pip.batch_transform(batch, True, True)
         assert(out.shape==(12, 240, 160, 1))
         assert(pts.shape==(12, 68, 2))
 
     def _test_small_batch(self):
 
         sub_batch = batch[:2]
-        out, pts = pip.batch_transform(sub_batch, True, False)
+        out, pts, pts_raw = pip.batch_transform(sub_batch, True, False)
         assert(out.shape==(2, 240, 160, 3))
         assert(pts.shape==(2, 68, 2))
 
         sub_batch = batch[:1]
-        out, pts = pip.batch_transform(sub_batch, True, False)
+        out, pts, pts_raw = pip.batch_transform(sub_batch, True, False)
         assert(out.shape==(1, 240, 160, 3))
         assert(pts.shape==(1, 68, 2))
 
     def test_partially_annotated(self):
 
         sub_batch = batch
-        img, _ = pip.batch_transform(sub_batch, True)
+        img, _, _ = pip.batch_transform(sub_batch, True)
         # img[:4] = -np.ones_like(img[:4])
         img = -np.ones_like(img)
-        img, _ = pip.batch_transform(img, preprocessing=True)
+        img, _, _ = pip.batch_transform(img, preprocessing=True)
 
 
 

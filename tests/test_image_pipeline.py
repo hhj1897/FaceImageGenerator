@@ -10,15 +10,15 @@ class testcase:
 
     def test_run_empty(self):
         pip = FACE_pipeline()
-        out, pts = pip.transform(img)
-        assert(img.shape==out.shape)
-        assert(pts==None)
+        out, pts, pts_raw = pip.transform(img) 
+        assert(img.shape==out.shape) 
+        assert(pts==None) 
 
     def test_grayscale(self):
         pip = FACE_pipeline(
                 grayscale=True
                 )
-        out, pts = pip.transform(img, preprocessing=True)
+        out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape[:2]==out.shape[:2])
         assert(out.shape[-1]==1)
         assert(pts==None)
@@ -27,7 +27,7 @@ class testcase:
         pip = FACE_pipeline(
                 histogram_normalization=True
                 )
-        out, pts = pip.transform(img, preprocessing=True)
+        out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape==out.shape)
         assert(out.max()<=1)
         assert(out.min()>=0)
@@ -38,7 +38,7 @@ class testcase:
                 histogram_normalization=True,
                 grayscale=True
                 )
-        out, pts = pip.transform(img, preprocessing=True)
+        out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape[:2]==out.shape[:2])
         assert(out.shape[-1]==1)
         assert(out.max()<=1)
@@ -58,7 +58,7 @@ class testcase:
                 )
 
 
-        out, pts = pip.transform(
+        out, pts, pts_raw = pip.transform(
                 img, 
                 preprocessing=False,
                 augmentation=True
@@ -67,7 +67,7 @@ class testcase:
         assert(img.shape==out.shape)
 
 
-        out, pts = pip.transform(
+        out, pts, pts_raw = pip.transform(
                 img, 
                 preprocessing=True,
                 augmentation=True
@@ -81,9 +81,10 @@ class testcase:
                 output_size = [160,240],
                 face_size = 160,
                 )
-        out, pts = pip.transform(img, face_detect=True)
+        out, pts, pts_raw = pip.transform(img, face_detect=True)
         assert(out.shape==(240,160,3))
         assert(pts.shape==(68,2))
+        assert(pts_raw.shape==(68,2))
 
     def test_full_pipeline(self):
         pip = FACE_pipeline(
@@ -98,7 +99,12 @@ class testcase:
                 fill_mode = 'edge',
                 random_flip = True,
                 )
-        out, pts = pip.transform(img, face_detect=True, preprocessing=True, augmentation=True)
+        out, pts, pts_raw = pip.transform(
+                img, 
+                face_detect=True, 
+                preprocessing=True, 
+                augmentation=True
+                )
         assert(out.shape==(240,160,1))
         assert(pts.shape==(68,2))
         # save output
