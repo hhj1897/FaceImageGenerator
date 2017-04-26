@@ -25,12 +25,35 @@ class testcase:
 
     def test_normalization(self):
         pip = FACE_pipeline(
-                histogram_normalization=True
+                histogram_normalization = True,
                 )
         out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape==out.shape)
         assert(out.max()<=1)
         assert(out.min()>=0)
+        assert(pts==None)
+
+        tmp = np.zeros_like(img)
+        out, pts, pts_raw = pip.transform(tmp, preprocessing=True)
+        assert(tmp.shape==out.shape)
+        assert(np.all(out==0.5))
+        assert(pts==None)
+
+    def test_standarzation(self):
+        pip = FACE_pipeline(
+                standardisation = True,
+                histogram_normalization = True,
+                )
+        out, pts, pts_raw = pip.transform(img, preprocessing=True)
+        assert(img.shape==out.shape)
+        assert(out.max()>=0)
+        assert(out.min()<=0)
+        assert(pts==None)
+
+        tmp = np.zeros_like(img)
+        out, pts, pts_raw = pip.transform(tmp, preprocessing=True)
+        assert(tmp.shape==out.shape)
+        assert(np.all(out==0))
         assert(pts==None)
 
     def test_preprocessing(self):
@@ -96,6 +119,7 @@ class testcase:
                 width_shift_range = 0.05,
                 height_shift_range = 0.05,
                 zoom_range = 0.05,
+                gaussian_range = 2,
                 fill_mode = 'edge',
                 random_flip = True,
                 )

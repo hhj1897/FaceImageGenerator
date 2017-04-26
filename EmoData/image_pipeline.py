@@ -6,7 +6,7 @@ import math
 from tqdm import tqdm
 from skimage.color import rgb2gray, gray2rgb
 from skimage.io import imread
-from skimage import transform, exposure
+from skimage import transform, exposure, filters
 from .image_augmentation import rotate, zoom, width_shift, height_shift
 from .image_processing import bbox_extractor, save_image, add_landmarks_to_img 
 import threading
@@ -17,6 +17,7 @@ class FACE_pipeline():
     def __init__(self,
             histogram_normalization=False,
             grayscale = False,
+            standardisation = False,
             output_size = [160,240],
             face_size = 160,
             resize = False,
@@ -24,6 +25,7 @@ class FACE_pipeline():
             width_shift_range = 0.05,
             height_shift_range = 0.05,
             zoom_range = 0.05,
+            gaussian_range = 2,
             fill_mode = 'edge',
             random_flip = True,
             path_to_shape_model = None,
@@ -38,12 +40,16 @@ class FACE_pipeline():
 
         self.histogram_normalization = histogram_normalization
         self.grayscale = grayscale
+
+        # Standardisation (zero-mean, unit-variance)
+        self.standardisation = standardisation 
         self.resize = resize 
 
         self.rotation_range = rotation_range
         self.width_shift_range = width_shift_range
         self.height_shift_range = height_shift_range
         self.zoom_range = zoom_range
+        self.gaussian_range = gaussian_range 
         self.fill_mode = fill_mode
         self.random_flip = random_flip
 
@@ -108,9 +114,33 @@ class FACE_pipeline():
             if self.resize:
                 img = transform.resize(img, self.resize)
 
+            if self.standardisation:
+                img -= np.apply_over_axes(np.mean, img, [0,1])
+                if np.all(img==0):
+                    # if all pixels values are identical, variance is zerso -> no scaling
+                    pass
+                else:
+                    img /= np.apply_over_axes(np.std, img, [0,1])
+
 
 
         if augmentation:
+
+            ############################################################### 
+            # add noise trough various image filter 
+            ############################################################### 
+
+            # add gaussian noise trough smoothing
+            sigma = np.random.uniform(0, self.gaussian_range)
+            img = filters.gaussian(img, sigma)
+            ############################################################### 
+
+
+
+            ############################################################### 
+            # add noise trough transformation 
+            ############################################################### 
+
             # compute random rotation
             deg = np.random.uniform(-self.rotation_range, self.rotation_range)
             trans = rotate(img.shape, deg)
@@ -132,12 +162,13 @@ class FACE_pipeline():
                     img=img[:,::-1]
 
             img_tr = transform.warp(img, trans, mode=self.fill_mode)
-            # if transformation is valid, update image
 
+            # if transformation is valid, update image
             if not (np.all(img==0) or np.any(np.isnan(img))):
                 img = img_tr 
                 if pts!=None:
                     pts = trans.inverse(pts)
+            ############################################################### 
 
         return img, pts, pts_raw
 
