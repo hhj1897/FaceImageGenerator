@@ -13,7 +13,7 @@ def read(fname):
 
 setup(
     name="EmoData",
-    version="0.0.1",
+    version="0.0.2",
     author="Robert Walecki",
     author_email="r.walecki14@imperial.ac.uk",
     description=(""),
@@ -26,7 +26,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     data_files = [
-        ('./EmoData/data/', ['./EmoData/data/mean_shape.h5']),
+        ('./EmoData/data/', ['./EmoData/data/mean_shape.h5', './EmoData/data/shape_predictor_68_face_landmarks.dat']),
         ],
     packages=find_packages(),
 )
