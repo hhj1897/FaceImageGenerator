@@ -12,7 +12,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name="EmoData",
+    name="FaceImageGenerator",
     version="0.0.2",
     author="Robert Walecki",
     author_email="r.walecki14@imperial.ac.uk",
@@ -26,7 +26,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     data_files = [
-        ('./EmoData/data/', ['./EmoData/data/mean_shape.h5', './EmoData/data/shape_predictor_68_face_landmarks.dat']),
+        ('./FaceImageGenerator/data/', ['./FaceImageGenerator/data/mean_shape.h5', './FaceImageGenerator/data/shape_predictor_68_face_landmarks.dat']),
         ],
     packages=find_packages(),
 )

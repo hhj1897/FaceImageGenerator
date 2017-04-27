@@ -131,10 +131,52 @@ class testcase:
                 )
         assert(out.shape==(240,160,1))
         assert(pts.shape==(68,2))
-        # save output
-        # out = out-out.min()
-        # out = out/out.max()
-        # imsave('test.jpg',out[:,:,0])
+
+    def test_full_pipeline_variations(self):
+        img = imread(pwd+'/data/images/test_08.jpg')
+        pip = FACE_pipeline(
+                output_size = [256,256],
+                face_size = 224,
+                histogram_normalization=True,
+                grayscale=False,
+                rotation_range = 15.,
+                width_shift_range = 0.05,
+                height_shift_range = 0.05,
+                zoom_range = 0.05,
+                gaussian_range = 5,
+                fill_mode = 'edge',
+                random_flip = True,
+                )
+
+        out_y= []
+        for x in range(3):
+            out_x = []
+            for y in range(2):
+                out, pts, pts_raw = pip.transform(
+                        img, 
+                        face_detect=True, 
+                        preprocessing=True, 
+                        augmentation=True
+                        )
+                assert(out.shape==(256,256,3))
+                assert(pts.shape==(68,2))
+                out_x.append(out)
+
+            out_y.append(np.vstack(out_x))
+        out_grid = np.hstack(out_y)
+        out_grid = out_grid-out_grid.min()
+        out_grid = out_grid/out_grid.max()
+        imsave('train.jpg',out_grid)
+
+        out, pts, pts_raw = pip.transform(
+                img, 
+                face_detect=True, 
+                preprocessing=True, 
+                augmentation=False,
+                )
+        assert(out.shape==(256,256,3))
+        assert(pts.shape==(68,2))
+        imsave('test.jpg',out)
 
 
 
