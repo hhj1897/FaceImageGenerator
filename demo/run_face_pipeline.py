@@ -20,7 +20,8 @@ pip = FACE_pipeline(
 
 img = imread(pwd+'/input.jpg')
 
-# apply face detecton and allignment
+# apply landmark detecton, face alignment and extract bounding box
+# (Use this setting if you just want to use the bounding box or landmarks)
 out, pts, pts_raw = pip.transform(
         img, 
         face_detect=True, 
@@ -29,8 +30,8 @@ out, pts, pts_raw = pip.transform(
         )
 imsave('face.jpg',out)
 
-# apply face detecton, allignment and preprocessing
-# (Use this pipeline for your CNN test data)
+# apply landmark detecton, allignment, preprocessing and extract bounding box
+# (Use this setting for your CNN test data)
 out, pts, pts_raw = pip.transform(
         img, 
         face_detect=True, 
@@ -39,8 +40,8 @@ out, pts, pts_raw = pip.transform(
         )
 imsave('test.jpg',out)
 
-# apply face detecton, allignment, preprocessing and data augmentation
-# (Use this pipeline for your CNN training data)
+# apply face detecton, allignment, preprocessing, data augmentation and extract bounding box
+# (Use this setting for your CNN training data)
 out, pts, pts_raw = pip.transform(
         img, 
         face_detect=True, 
