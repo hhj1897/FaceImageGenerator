@@ -3,7 +3,6 @@ import os
 import numpy as np
 import glob
 import math
-from tqdm import tqdm
 from skimage.color import rgb2gray, gray2rgb
 from skimage.io import imread
 from skimage import transform, exposure, filters
