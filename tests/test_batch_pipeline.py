@@ -1,4 +1,4 @@
-from EmoData.image_pipeline import FACE_pipeline 
+from FaceImageGenerator.image_pipeline import FACE_pipeline 
 import os
 from skimage.io import imread
 import glob

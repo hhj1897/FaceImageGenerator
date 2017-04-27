@@ -1,4 +1,4 @@
-from EmoData.provider import flow_from_hdf5
+from FaceImageGenerator.provider import flow_from_hdf5
 import os
 import numpy as np
 pwd = os.path.dirname(os.path.abspath(__file__))
