@@ -30,4 +30,6 @@ Therefore, run:
 ```
 nosetests .
 ```
-The tests should not take longer than a few seconds. You are ready to use FaceImageGenerator. Enjoy!
+The tests should not take longer than a few seconds. You are ready to use FaceImageGenerator. 
+You will find some commented scripts in the demo folder.
+Enjoy!
