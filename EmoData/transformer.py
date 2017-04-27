@@ -1,7 +1,6 @@
 import h5py
 import random
 import numpy as np
-from tqdm import tqdm
 import os
 
 def merge_h5(in_path_list, out_path, subject_ids=None, shuffle=False, downsample=1):
@@ -18,7 +17,7 @@ def merge_h5(in_path_list, out_path, subject_ids=None, shuffle=False, downsample
     f_tmp = h5py.File(out_path+'.tmp.h5')
     f_out = h5py.File(out_path)
 
-    for i in tqdm(range(len(in_path_list))):
+    for i in range(len(in_path_list)):
         f_in = in_path_list[i]
 
         with h5py.File(f_in) as f:
@@ -56,7 +55,7 @@ def merge_h5(in_path_list, out_path, subject_ids=None, shuffle=False, downsample
     idx = np.arange(f_tmp[list(f_tmp.keys())[0]].shape[0])
     if shuffle:random.shuffle(idx)
 
-    for i in tqdm(range(len(idx))):
+    for i in range(len(idx)):
         frame_num = idx[i]
 
         if i==0:
