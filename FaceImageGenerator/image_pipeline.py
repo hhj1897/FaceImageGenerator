@@ -24,7 +24,7 @@ class FACE_pipeline():
             width_shift_range = 0.05,
             height_shift_range = 0.05,
             zoom_range = 0.05,
-            gaussian_range = 2,
+            gaussian_range = 0,
             fill_mode = 'edge',
             random_flip = True,
             path_to_shape_model = None,
@@ -98,8 +98,8 @@ class FACE_pipeline():
         if np.all(img==img.item(0)):
             pass
         else:
-            img -= img.min()
-            img /= img.max()
+            img -= np.apply_over_axes(np.min, img, [0,1])
+            img /= np.apply_over_axes(np.max, img, [0,1])
 
         if preprocessing:
             if self.grayscale and img.shape[-1]==3:
@@ -115,7 +115,8 @@ class FACE_pipeline():
 
             if self.standardisation:
                 img -= np.apply_over_axes(np.mean, img, [0,1])
-                if np.all(img==0):
+
+                if np.all(img==img.item(0)):
                     # if all pixels values are identical, variance is zerso -> no scaling
                     pass
                 else:
@@ -130,9 +131,12 @@ class FACE_pipeline():
             ############################################################### 
 
             # add gaussian noise trough smoothing
-            sigma = np.random.uniform(0, self.gaussian_range)
-            img = filters.gaussian(img, sigma)
+            if self.gaussian_range:
+                sigma = np.random.uniform(0, self.gaussian_range)
+                img = filters.gaussian(img, sigma)
             ############################################################### 
+
+        
 
 
 
