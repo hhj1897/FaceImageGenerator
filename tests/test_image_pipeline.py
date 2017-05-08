@@ -29,7 +29,7 @@ class testcase:
                 )
         out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape==out.shape)
-        assert(out.max()<=1)
+        assert(out.max()<=255)
         assert(out.min()>=0)
         assert(pts==None)
 
@@ -64,7 +64,7 @@ class testcase:
         out, pts, pts_raw = pip.transform(img, preprocessing=True)
         assert(img.shape[:2]==out.shape[:2])
         assert(out.shape[-1]==1)
-        assert(out.max()<=1)
+        assert(out.max()<=255)
         assert(out.min()>=0)
         assert(pts==None)
 
@@ -166,7 +166,7 @@ class testcase:
         out_grid = np.hstack(out_y)
         out_grid = out_grid-out_grid.min()
         out_grid = out_grid/out_grid.max()
-        imsave('train.jpg',out_grid)
+        imsave('train.jpg',np.uint8(out_grid))
 
         out, pts, pts_raw = pip.transform(
                 img, 
@@ -176,7 +176,7 @@ class testcase:
                 )
         assert(out.shape==(256,256,3))
         assert(pts.shape==(68,2))
-        imsave('test.jpg',out)
+        imsave('test.jpg',np.uint8(out))
 
 
 

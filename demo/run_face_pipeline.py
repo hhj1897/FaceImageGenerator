@@ -28,6 +28,8 @@ out, pts, pts_raw = pip.transform(
         preprocessing=False, 
         augmentation=False,
         )
+
+out = np.uint8(out)
 imsave('face.jpg',out)
 
 # apply landmark detecton, allignment, preprocessing and extract bounding box
@@ -38,6 +40,8 @@ out, pts, pts_raw = pip.transform(
         preprocessing=True, 
         augmentation=False,
         )
+
+out = np.uint8(out)
 imsave('test.jpg',out)
 
 # apply face detecton, allignment, preprocessing, data augmentation and extract bounding box
@@ -48,4 +52,6 @@ out, pts, pts_raw = pip.transform(
         preprocessing=True, 
         augmentation=True,
         )
+
+out = np.uint8(out)
 imsave('train.jpg',out)

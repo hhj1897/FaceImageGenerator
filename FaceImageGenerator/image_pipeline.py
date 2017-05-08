@@ -96,10 +96,15 @@ class FACE_pipeline():
         # normalize input to float32 with values between 0 and 1
         img = np.float32(img)
         if np.all(img==img.item(0)):
-            pass
+            s_0 = 0
+            s_1 = 1
+            img = np.zeros_like(img)
         else:
-            img -= np.apply_over_axes(np.min, img, [0,1])
-            img /= np.apply_over_axes(np.max, img, [0,1])
+            s_0 = np.min(img)
+            s_1 = np.max(img)
+            img = (img-s_0)/(s_1-s_0)
+            # img -= np.apply_over_axes(np.min, img, [0,1])
+            # img /= np.apply_over_axes(np.max, img, [0,1])
 
         if preprocessing:
             if self.grayscale and img.shape[-1]==3:
@@ -136,8 +141,6 @@ class FACE_pipeline():
                 img = filters.gaussian(img, sigma)
             ############################################################### 
 
-        
-
 
 
             ############################################################### 
@@ -172,6 +175,8 @@ class FACE_pipeline():
                 if pts!=None:
                     pts = trans.inverse(pts)
             ############################################################### 
+
+        img = img * (s_1-s_0) + s_0
 
         return img, pts, pts_raw
 
