@@ -26,7 +26,7 @@ setup(
         "License :: OSI Approved :: BSD License",
     ],
     data_files = [
-        ('./FaceImageGenerator/data/', ['./FaceImageGenerator/data/mean_shape.h5', './FaceImageGenerator/data/shape_predictor_68_face_landmarks.dat']),
+        ('./FaceImageGenerator/data', ['./FaceImageGenerator/data/mean_shape.h5', './FaceImageGenerator/data/shape_predictor_68_face_landmarks.dat']),
         ],
     packages=find_packages(),
 )
